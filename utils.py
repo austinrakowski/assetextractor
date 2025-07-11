@@ -44,6 +44,10 @@ class AssetExtractorUtils:
             ], 
             "Indicator Valves": [
                 "address", "business_name", "location"
+            ], 
+            "Emergency Lights": [
+                "address", "business_name", "location", "unit_type", "battery_size",
+                "battery #", "battery_date", "voltage / size", "comments"
             ]
         }
 
@@ -124,6 +128,9 @@ class AssetExtractorUtils:
             ], 
             'indicator_valves': [
                 "post indicator valve inspection"
+            ], 
+            'emergency_lighting': [
+                'unit emergency lighting test'
             ]
         }
         

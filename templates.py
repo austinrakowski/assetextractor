@@ -342,3 +342,49 @@ class AssetTemplateMethods:
             data.get('Business_Name', ''),
             data.get('Valve_Location', '')
         ]])
+    
+    def emergency_lighting(self, file_path):
+        """Extract data from Unit Emergency Lighting Test & Inspection Template"""
+        
+        tables = self.get_document_tables(file_path)
+        extracted_data = {}
+        lighting_data = []
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+        }
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                # Extract header fields
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        extracted_data[field_mappings[cell_text]] = cells[i + 1]
+                
+                if (len(cells) >= 7 and 
+                    cells[0] and 
+                    cells[0] not in ["Unit Location", "Business Name:", "SPU", "BP", "RH", "EX", "COM"] and
+                    not any(header in cells[0] for header in ["Monthly", "Annual", "UNIT TYPES", "Yes", "No"]) and
+                    not cells[0].endswith(":")):
+                    
+                    business_name = extracted_data.get("Business_Name", '')
+                    address = extracted_data.get("Address", '')
+                    city = extracted_data.get("City", '')
+                    
+                    lighting_data.append([
+                        f'{address} {city}',
+                        business_name,
+                        cells[0],  # Unit Location
+                        cells[1],  # Unit Type
+                        cells[8] if len(cells) > 7 else "",  # Battery Size
+                        cells[9] if len(cells) > 8 else "",  # Battery #
+                        cells[10] if len(cells) > 9 else "",  # Battery Date
+                        cells[11] if len(cells) > 10 else "",  # Voltage/Size
+                        cells[12] if len(cells) > 11 else ""   # Comments
+                    ])
+        
+        self.update_workbook("Emergency Lights", lighting_data)
