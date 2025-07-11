@@ -33,8 +33,8 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
             self.failed_files.append(filename)
             return None
 
-    def process_all_pdfs(self):
-        """Process all PDF files in the directory."""
+    def process_all_files(self):
+        """Process all .doxc files in the directory."""
         files = self.get_docx_files()
         
         if not files:
@@ -81,10 +81,7 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
             'success_rate': len(self.processed_files) / (len(self.processed_files) + len(self.failed_files)) * 100 if (self.processed_files or self.failed_files) else 0
         }
 
-# Example usage
-if __name__ == "__main__":
-    # Example of how to use the AssetExtractor
+if __name__ == "__main__": 
     directory_path = "/Users/austinrakowski/dev/random/firstresponse/frdocs"
     extractor = AssetExtractor(directory_path)
-    # extractor.debug_file("/Users/austinrakowski/dev/random/firstresponse/frdocs/SS Report Jun 2025 (WET SYSTEM).pdf")
-    extractor.process_all_pdfs()
+    extractor.process_all_files()

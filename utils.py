@@ -16,12 +16,16 @@ class AssetExtractorUtils:
 
         sheets_with_headers = {
             "Fixed Extinguishing Systems": [
-                "address", "client", "last_recharge_date", "location_of_cylinders", 
+                "address", "business_name", "last_recharge_date", "location_of_cylinders", 
                 "manufacturer", "model", "serial", "size"
             ],
             "Fire Hoses": [
-                "address", "business name", "location", "length", 
+                "address", "business_name", "location", "length", 
                 "size", "nozzle", "status", "next_ht", "notes"
+            ],
+            "Fire Hydrants": [
+                "address", "business_name", "hydrant_number", "make", "model",
+                "color", "shutoff_location", "type"
             ]
         }
 
@@ -83,6 +87,9 @@ class AssetExtractorUtils:
             ],
             'fire_hoses': [
                 'fire hose test and inspection'
+            ], 
+            'fire_hydrants' : [
+                'fire hydrant inspection & testing'
             ]
         }
         
