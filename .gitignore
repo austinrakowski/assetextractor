@@ -2,3 +2,4 @@ __pycache__/
 frdocs/
 venv/
 *.xlsx
+__pycache__
