@@ -125,10 +125,53 @@ class AssetTemplateMethods:
 
         return None
             
-            
+    def backflows(self, file_path):
+        """Extract data from Backflow Prevention Assembly Test Report Template"""
         
-
-
-
+        tables = self.get_document_tables(file_path)
+        data = {}
         
-       
+        field_mappings = {
+            "Name of Premise:": "Name_of_Premise",
+            "Service Address:": "Service_Address", 
+            "Postal Code:": "Postal_Code",
+            "Location of Backflow Preventer:": "Location"
+        }    
+        
+        for table in tables:
+            for row_idx, row in enumerate(table.rows):
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        data[field_mappings[cell_text]] = cells[i + 1]
+                    
+                    # When we find the Manufacturer label, get assembly values from previous row
+                    if cell_text == "Manufacturer" and row_idx > 0:
+                        prev_row_cells = [cell.text.strip() for cell in table.rows[row_idx - 1].cells]
+        
+                        current_row_labels = cells
+                        for j, label in enumerate(current_row_labels):
+                            if j < len(prev_row_cells):
+                                if label == "Manufacturer":
+                                    data["Manufacturer"] = prev_row_cells[j]
+                                elif label == "Model #":
+                                    data["Model_Number"] = prev_row_cells[j]
+                                elif label == "Serial #":
+                                    data["Serial_Number"] = prev_row_cells[j]
+                                elif label == "Type":
+                                    data["Type"] = prev_row_cells[j]
+                                elif label == "Size":
+                                    data["Size"] = prev_row_cells[j]
+                        break
+        
+        self.update_workbook("Backflows", [[
+            f"{data.get('Service_Address', '')} {data.get('Postal_Code', '')}",
+            data.get('Name_of_Premise', ''),
+            data.get('Manufacturer', ''),
+            data.get('Model_Number', ''),
+            data.get('Serial_Number', ''),
+            data.get('Type', ''),
+            data.get('Size', ''),
+            data.get('Location_of_Backflow_Preventer', '')
+        ]])

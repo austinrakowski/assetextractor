@@ -26,6 +26,10 @@ class AssetExtractorUtils:
             "Fire Hydrants": [
                 "address", "business_name", "hydrant_number", "make", "model",
                 "color", "shutoff_location", "type"
+            ], 
+            "Backflows" : [
+                "address", "name_of_premise", "manufacturer", "model_number", 
+                "serial_number", "type", "size", "location"
             ]
         }
 
@@ -90,6 +94,9 @@ class AssetExtractorUtils:
             ], 
             'fire_hydrants' : [
                 'fire hydrant inspection & testing'
+            ], 
+            'backflows' : [
+                'location of backflow preventer'
             ]
         }
         
