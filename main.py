@@ -1,118 +1,90 @@
-from docx import Document
 import os
 import pprint
+from templates import AssetTemplateMethods
+from utils import AssetExtractorUtils
 
-class FireProtectionReportExtractor:
+class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
+    
     def __init__(self, directory_path):
-        self.directory_path = directory_path
-        
-    def extract_fixed_extinguishing_systems(self, doc):
-        """Extract data from Fixed Extinguishing Systems template"""
-        if not doc.tables:
-            return {}
-            
-        table = doc.tables[0]
-        data = {}
-        
-        for row in table.rows:
-            cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-            
-            for i in range(len(cells) - 1):
-                if cells[i].endswith(':'):
-                    key = cells[i].replace(':', '')
-
-                    for j in range(i + 1, len(cells)):
-                        if cells[j] != cells[i] and not cells[j].endswith(':'):
-                            data[key] = cells[j]
-                            break
-        
-        return data
-
-    def extract_unit_emergency_lighting_extinguisher(self, doc):
-        """Extract data from Unit Emergency Lighting / Extinguisher Test & Inspection template"""
-        if len(doc.tables) < 3:
-            return {}
-        
-        data_table = doc.tables[2]
-        
-        extinguishers = []
-        headers = []
+        super().__init__(directory_path)
+        self.processed_files = []
+        self.failed_files = []
     
-        first_row = data_table.rows[0]
-        headers = [cell.text.strip() for cell in first_row.cells]
-        
-        for i, row in enumerate(data_table.rows):
-            if i == 0:  
-                continue
-                
-            row_data = [cell.text.strip() for cell in row.cells]
-            
-            extinguisher = {}
-            for j, value in enumerate(row_data):
-                if j < len(headers) and headers[j] and value:
-                    extinguisher[headers[j]] = value
-            
-            if extinguisher: 
-                extinguishers.append(extinguisher)
-    
-        return {'extinguishers': extinguishers}
-
-    def extract_entinguishers(self, doc): 
-        table = doc.tables[2]
-        for i, row in enumerate(table.rows):
-            if i == 0: 
-                continue
-
-            cells = row.cells
-            
-            # Handle cases where rows might have fewer cells
-            try:
-                location = cells[0].text.strip() if len(cells) > 0 else ""
-                size_type = cells[1].text.strip() if len(cells) > 1 else ""
-                brand = cells[2].text.strip() if len(cells) > 2 else ""
-                serial_num = cells[3].text.strip() if len(cells) > 3 else ""
-                mfg_date = cells[4].text.strip() if len(cells) > 4 else ""
-                nsd = cells[5].text.strip() if len(cells) > 5 else ""
-                comments = cells[6].text.strip() if len(cells) > 6 else ""
-            except IndexError as e:
-                print(f"Error processing row {i}: {e}")
-                continue
-
-            print([location, size_type, brand, serial_num, mfg_date, nsd, comments])
-
-        return None
-
-    
-    def debug_tables(self, filename):
-        """Debug method to see table structure"""
-        file_path = os.path.join(self.directory_path, filename)
-        doc = Document(file_path)
-        
-        print(f"Number of tables: {len(doc.tables)}")
-        
-        for i, table in enumerate(doc.tables):
-            print(f"\nTable {i}: {len(table.rows)} rows, {len(table.columns)} columns")
-            for j, row in enumerate(table.rows):
-                row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                if row_text:
-                    print(f"  Row {j}: {row_text}")
-    
-    def test_single_file(self, filename, method_name):
-        """Test a specific extraction method on a single file"""
+    def process_file(self, filename):
+        """Process a single file."""
         file_path = os.path.join(self.directory_path, filename)
         
         try:
-            doc = Document(file_path)
+            print(f"Processing: {filename}")
+
+            text = self.get_document_text(file_path)
+            # Determine which extraction method to use
+            method_name = self.get_extraction_method(text)
+            
             method = getattr(self, method_name)
-            result = method(doc)
-            print(f"File: {filename}")
-            print(f"Method: {method_name}")
-            pprint.pprint(result)
+            result = method(file_path)
+            
+            print(f"Successfully extracted data from {filename} using {method_name}")
+            self.processed_files.append(filename)
             return result
+            
         except Exception as e:
-            print(f"Error testing {filename} with {method_name}: {e}")
+            print(f"Error processing {filename}: {e}")
+            self.failed_files.append(filename)
             return None
 
-# Debug the table structure first
-extractor = FireProtectionReportExtractor('/Users/austinrakowski/dev/random/firstresponse')
-extractor.test_single_file('EXT Report Template (Filled).docx', 'extract_entinguishers')
+    def process_all_pdfs(self):
+        """Process all PDF files in the directory."""
+        files = self.get_docx_files()
+        
+        if not files:
+            print("No .docx files found in the directory.")
+            return
+        
+        print(f"Found {len(files)} PDF file(s) to process")
+        
+        for filename in files:
+            result = self.process_file(filename)
+        
+        # Print summary
+        print(f"\nProcessing Summary:")
+        print(f"Successfully processed: {len(self.processed_files)} files")
+        print(f"Failed to process: {len(self.failed_files)} files")
+        
+        if self.failed_files:
+            print(f"Failed files: {', '.join(self.failed_files)}")
+
+    def debug_file(self, filename):
+        """Debug a specific file to see its content and auto-detected method."""
+        file_path = os.path.join(self.directory_path, filename)
+        
+        try:
+            text = self.extract_text_from_pdf(file_path)
+            detected_method = self.get_extraction_method(text)
+            
+            print(f"File: {filename}")
+            print(f"Detected method: {detected_method}")
+            print("-" * 50)
+            print("Text")
+            print(text)
+            print("-" * 50)
+            
+        except Exception as e:
+            print(f"Error debugging {filename}: {e}")
+
+    def get_stats(self):
+        """Get processing statistics."""
+        return {
+            'total_files': len(self.processed_files) + len(self.failed_files),
+            'processed_files': len(self.processed_files),
+            'failed_files': len(self.failed_files),
+            'success_rate': len(self.processed_files) / (len(self.processed_files) + len(self.failed_files)) * 100 if (self.processed_files or self.failed_files) else 0
+        }
+
+# Example usage
+if __name__ == "__main__":
+    # Example of how to use the AssetExtractor
+    directory_path = "/Users/austinrakowski/dev/random/firstresponse/frdocs"
+    extractor = AssetExtractor(directory_path)
+    # extractor.debug_file("/Users/austinrakowski/dev/random/firstresponse/frdocs/SS Report Jun 2025 (WET SYSTEM).pdf")
+    extractor.process_all_pdfs()

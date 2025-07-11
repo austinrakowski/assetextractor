@@ -1,0 +1,93 @@
+import os
+import re
+from openpyxl import Workbook
+import pprint
+from docx import Document
+
+class AssetExtractorUtils:
+    def __init__(self, directory_path):
+        self.directory_path = directory_path
+        self.workbook = None
+        self.create_workbook()
+
+    def create_workbook(self):
+        
+        self.workbook = Workbook()
+
+        sheets_with_headers = {
+            "Fixed Extinguishing Systems": [
+                "address", "client", "last_recharge_date", "location_of_cylinders", 
+                "manufacturer", "model", "serial", "size"
+            ],
+            "Fire Hoses": [
+                "address", "business name", "location", "length", 
+                "size", "nozzle", "status", "next_ht", "notes"
+            ]
+        }
+
+        default_sheet = self.workbook.active
+        self.workbook.remove(default_sheet)
+
+        for sheet_name, headers in sheets_with_headers.items():
+            sheet = self.workbook.create_sheet(title=sheet_name)
+            sheet.append(headers)
+
+        self.workbook.save("assets.xlsx")
+
+    def update_workbook(self, sheet_name, data):
+        
+        sheet = self.workbook[sheet_name]
+
+        for row in data:
+            sheet.append(row)
+
+        self.workbook.save("assets.xlsx")
+
+    def get_document_text(self, file_path): 
+        doc = Document(file_path)
+        full_text = []
+    
+        # Extract text from paragraphs
+        for paragraph in doc.paragraphs:
+            full_text.append(paragraph.text)
+    
+        # Extract text from tables
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    full_text.append(cell.text)
+        
+        return '\n'.join(full_text)
+
+    def get_document_tables(self, file_path): 
+        doc = Document(file_path)
+
+        return doc.tables
+    
+    def get_docx_files(self):
+        """Get list of PDF files in directory."""
+        try:
+            return [f for f in os.listdir(self.directory_path) if f.lower().endswith('.docx')]
+        except OSError as e:
+            print(f"Error reading directory {self.directory_path}: {e}")
+            return []
+
+    def get_extraction_method(self, text):
+        """Determine which extraction method to use based on its content."""
+        text_lower = text.lower()
+        
+        method_keywords = {
+            'fixed_extinguishing_systems': [
+                'inspection, testing and maintenance report for fixed extinguishing systems',
+                'location of system cylinders'
+            ],
+            'fire_hoses': [
+                'fire hose test and inspection'
+            ]
+        }
+        
+        for method_name, keywords in method_keywords.items():
+            if any(keyword in text_lower for keyword in keywords):
+                return method_name
+        
+        return None
