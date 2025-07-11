@@ -272,3 +272,73 @@ class AssetTemplateMethods:
             data.get('Power', '')
         ]])
         return None
+
+    def smoke_alarms(self, file_path):
+        """Extract data from Inspection & Testing of Smoke Alarms Template"""
+        
+        tables = self.get_document_tables(file_path)
+        extracted_data = {}
+        alarm_data = []
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+        }
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                # Extract header fields
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        extracted_data[field_mappings[cell_text]] = cells[i + 1]
+                
+                # Extract alarm device data rows (skip header rows)
+                if (len(cells) >= 5 and 
+                    cells[0] and 
+                    cells[0] not in ["Device", "Business Name:", "A.", "B.", "C."] and
+                    not any(header in cells[0] for header in ["Page", "Correctly", "Requires"]) and
+                    not cells[0].endswith(":")):
+                    
+                    address = f"{extracted_data.get('Address', '')} {extracted_data.get('City', '')}"
+                    business_name = extracted_data.get("Business_Name", '')
+                    
+                    alarm_data.append([
+                        address,
+                        business_name,
+                        cells[0],  # Device
+                        cells[1],  # Location
+                        cells[5] if len(cells) > 4 else ""  # Remarks
+                    ])
+        
+        self.update_workbook("Smoke Alarms", alarm_data)
+
+    
+    def indicator_valves(self, file_path):
+        """Extract data from Post Indicator Valve Inspection Template"""
+        
+        tables = self.get_document_tables(file_path)
+        data = {}
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+            "VALVE LOCATION:": "Valve_Location"
+        }
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        data[field_mappings[cell_text]] = cells[i + 1]
+        
+        self.update_workbook("Indicator Valves", [[
+            f'{data.get('Address','')} {data.get('City','')}',
+            data.get('Business_Name', ''),
+            data.get('Valve_Location', '')
+        ]])

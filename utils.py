@@ -38,6 +38,12 @@ class AssetExtractorUtils:
             "Fire Pumps": [
                 "address", "business_name", "location", "system", "water_supply_source",
                 "pump_manufacturer", "pump_model", "controller_manufacturer", "controller_model", "type", "power"
+            ], 
+            "Smoke Alarms" : [
+                "address", "business_name", "device", "location", "remarks"
+            ], 
+            "Indicator Valves": [
+                "address", "business_name", "location"
             ]
         }
 
@@ -112,6 +118,12 @@ class AssetExtractorUtils:
             'fire_pumps': [
                 'fire pump annual performance tests', 
                 'pump has a prv installed'
+            ], 
+            'smoke_alarms' : [
+                'smoke alarm device record'
+            ], 
+            'indicator_valves': [
+                "post indicator valve inspection"
             ]
         }
         
