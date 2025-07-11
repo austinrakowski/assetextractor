@@ -30,6 +30,10 @@ class AssetExtractorUtils:
             "Backflows" : [
                 "address", "name_of_premise", "manufacturer", "model_number", 
                 "serial_number", "type", "size", "location"
+            ], 
+            "Extinguishers": [
+                "address", "business_name", "location", "size", "brand", "serial_number", 
+                "manufacture_date", "next_service_date", "comments"
             ]
         }
 
@@ -95,8 +99,11 @@ class AssetExtractorUtils:
             'fire_hydrants' : [
                 'fire hydrant inspection & testing'
             ], 
-            'backflows' : [
+            'backflows': [
                 'location of backflow preventer'
+            ],
+            'extinguishers': [
+                'extinguisher test & inspection'
             ]
         }
         

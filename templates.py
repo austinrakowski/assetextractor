@@ -175,3 +175,45 @@ class AssetTemplateMethods:
             data.get('Size', ''),
             data.get('Location_of_Backflow_Preventer', '')
         ]])
+    
+    def extinguishers(self, file_path):
+        """Extract data from Fire Extinguisher Test & Inspection Template"""
+        
+        tables = self.get_document_tables(file_path)
+        extracted_data = {}
+        extinguisher_data = []
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+        }
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                # Extract header fields
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        extracted_data[field_mappings[cell_text]] = cells[i + 1]
+                
+            
+                if (len(cells) >= 6 and 
+                    cells[0] and 
+                    cells[0] not in ["Location", "Mfg. Date", "Service Date", "Business Name:"] and
+                    not any(header in cells[0] for header in ["Column Legend", "Dates", "Major Service"]) and
+                    not cells[0].endswith(":")): 
+                    
+                    address_city = f"{extracted_data.get('Address', '')} {extracted_data.get('City', '')}"
+                    business_name = extracted_data.get("Business_Name", '')
+                    
+                    extinguisher_data.append([
+                        address_city, business_name, cells[0], cells[1], 
+                        cells[2], cells[3], cells[4], cells[5],
+                        cells[6] if len(cells) > 6 else ""
+                    ])
+        
+        self.update_workbook("Extinguishers", extinguisher_data)
+        return None
+        

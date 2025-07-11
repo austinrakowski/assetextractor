@@ -85,4 +85,4 @@ if __name__ == "__main__":
     directory_path = "/Users/austinrakowski/dev/random/firstresponse/frdocs"
     extractor = AssetExtractor(directory_path)
     extractor.process_all_files()
-    # extractor.process_file('BF Report Template - General (Filled).docx')
+    # extractor.process_file('EXT Report Template (1).docx')
