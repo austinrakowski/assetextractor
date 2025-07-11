@@ -34,6 +34,10 @@ class AssetExtractorUtils:
             "Extinguishers": [
                 "address", "business_name", "location", "size", "brand", "serial_number", 
                 "manufacture_date", "next_service_date", "comments"
+            ], 
+            "Fire Pumps": [
+                "address", "business_name", "location", "system", "water_supply_source",
+                "pump_manufacturer", "pump_model", "controller_manufacturer", "controller_model", "type", "power"
             ]
         }
 
@@ -104,6 +108,10 @@ class AssetExtractorUtils:
             ],
             'extinguishers': [
                 'extinguisher test & inspection'
+            ], 
+            'fire_pumps': [
+                'fire pump annual performance tests', 
+                'pump has a prv installed'
             ]
         }
         

@@ -216,4 +216,59 @@ class AssetTemplateMethods:
         
         self.update_workbook("Extinguishers", extinguisher_data)
         return None
+    
+    def fire_pumps(self, file_path):
+        """Extract data from Fire Pump Annual Performance Tests Template"""
         
+        tables = self.get_document_tables(file_path)
+        data = {}
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+            "Location:": "Location",
+            "System:": "System",
+            "Water Supply Source:": "Water_Supply_Source",
+            "Pump Manufacturer:": "Pump_Manufacturer",
+            "Pump Model:": "Pump_Model",
+            "Controller Manufacturer:": "Controller_Manufacturer",
+            "Controller Model:": "Controller_Model"
+        }
+        
+        type_checkboxes = ["Centrifugal", "Turbine"]
+        power_checkboxes = ["Electric", "Diesel", "Steam"]
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                for i, cell_text in enumerate(cells):
+                    # Handle regular field mappings
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        data[field_mappings[cell_text]] = cells[i + 1]
+                    
+                    # Handle type checkboxes
+                    for checkbox_type in type_checkboxes:
+                        if checkbox_type in cell_text and "☒" in cell_text:
+                            data["Type"] = checkbox_type
+                    
+                    # Handle power checkboxes
+                    for checkbox_power in power_checkboxes:
+                        if checkbox_power in cell_text and "☒" in cell_text:
+                            data["Power"] = checkbox_power
+        
+        self.update_workbook("Fire Pumps", [[
+            f"{data.get('Address', '')} {data.get('City', '')}",
+            data.get('Business_Name', ''),
+            data.get('Location', ''),
+            data.get('System', ''),
+            data.get('Water_Supply_Source', ''),
+            data.get('Pump_Manufacturer', ''),
+            data.get('Pump_Model', ''),
+            data.get('Controller_Manufacturer', ''),
+            data.get('Controller_Model', ''),
+            data.get('Type', ''),
+            data.get('Power', '')
+        ]])
+        return None
