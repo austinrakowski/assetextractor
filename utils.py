@@ -3,6 +3,7 @@ import re
 from openpyxl import Workbook
 import pprint
 from docx import Document
+import inspect 
 
 class AssetExtractorUtils:
     def __init__(self, directory_path):
@@ -17,7 +18,7 @@ class AssetExtractorUtils:
         sheets_with_headers = {
             "Fixed Extinguishing Systems": [
                 "address", "business_name", "last_recharge_date", "location_of_cylinders", 
-                "manufacturer", "model", "serial", "size"
+                "manufacturer", "model", "serial", "size", 
             ],
             "Fire Hoses": [
                 "address", "business_name", "location", "length", 
@@ -73,11 +74,9 @@ class AssetExtractorUtils:
         doc = Document(file_path)
         full_text = []
     
-        # Extract text from paragraphs
         for paragraph in doc.paragraphs:
             full_text.append(paragraph.text)
     
-        # Extract text from tables
         for table in doc.tables:
             for row in table.rows:
                 for cell in row.cells:

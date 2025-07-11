@@ -6,7 +6,8 @@ from utils import AssetExtractorUtils
 class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
     
     def __init__(self, directory_path):
-        super().__init__(directory_path)
+        AssetExtractorUtils.__init__(self, directory_path)
+        AssetTemplateMethods.__init__(self)
         self.processed_files = []
         self.failed_files = []
     
