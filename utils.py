@@ -115,9 +115,6 @@ class AssetExtractorUtils:
             ], 
             'backflows': [
                 'location of backflow preventer'
-            ],
-            'extinguishers': [
-                'extinguisher test & inspection'
             ], 
             'fire_pumps': [
                 'fire pump annual performance tests', 
@@ -131,6 +128,12 @@ class AssetExtractorUtils:
             ], 
             'emergency_lighting': [
                 'unit emergency lighting test'
+            ], 
+            'emergency_lighting_extinguisher': [
+                'unit emergency lighting /'
+            ], 
+            'extinguishers': [
+                'extinguisher test & inspection'
             ]
         }
         

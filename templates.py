@@ -360,7 +360,6 @@ class AssetTemplateMethods:
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
                 
-                # Extract header fields
                 for i, cell_text in enumerate(cells):
                     if cell_text in field_mappings and i + 1 < len(cells):
                         extracted_data[field_mappings[cell_text]] = cells[i + 1]
@@ -388,3 +387,74 @@ class AssetTemplateMethods:
                     ])
         
         self.update_workbook("Emergency Lights", lighting_data)
+
+    def emergency_lighting_extinguisher(self, file_path):
+        """Extract data from Unit Emergency Lighting / Extinguisher Test & Inspection Template"""
+        
+        tables = self.get_document_tables(file_path)
+        extracted_data = {}
+        lighting_data = []
+        extinguisher_data = []
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+        }
+        
+    
+        if len(tables) > 0:
+            for row in tables[0].rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        extracted_data[field_mappings[cell_text]] = cells[i + 1]
+        
+        # Extract emergency lighting data
+        if len(tables) > 4:
+            for row_idx, row in enumerate(tables[4].rows):
+                if row_idx >= 2:  
+                    cells = [cell.text.strip() for cell in row.cells]
+                    if cells[0]: 
+                        business_name = extracted_data.get("Business_Name", '')
+                        address = extracted_data.get("Address", '')
+                        city = extracted_data.get("City", '')
+                        
+                        lighting_data.append([
+                            f"{address} {city}",
+                            business_name,
+                            cells[0],  # Unit Location
+                            cells[1] if len(cells) > 1 else "",  # Unit Type
+                            cells[8] if len(cells) > 8 else "",  # Battery Size
+                            cells[9] if len(cells) > 9 else "",  # Battery #
+                            cells[10] if len(cells) > 10 else "", # Battery Date
+                            cells[11] if len(cells) > 11 else "", # Voltage/Size
+                            cells[12] if len(cells) > 12 else ""  # Comments
+                        ])
+        
+        # Extract fire extinguisher data
+        if len(tables) > 6:
+            for row_idx, row in enumerate(tables[6].rows):
+                if row_idx >= 1:
+                    cells = [cell.text.strip() for cell in row.cells]
+                    if cells[0]: 
+                        business_name = extracted_data.get("Business_Name", '')
+                        address = extracted_data.get("Address", '')
+                        city = extracted_data.get("City", '')
+                        
+                        extinguisher_data.append([
+                            f"{address} {city}",
+                            business_name,
+                            cells[0],  # Location
+                            cells[1] if len(cells) > 1 else "",  # Size/Type
+                            cells[2] if len(cells) > 2 else "",  # Brand
+                            cells[3] if len(cells) > 3 else "",  # Serial #
+                            cells[4] if len(cells) > 4 else "",  # Mfg. Date
+                            cells[5] if len(cells) > 5 else "",  # Next Service Date
+                            cells[6] if len(cells) > 6 else ""   # Comments
+                        ])
+        
+        if lighting_data:
+            self.update_workbook("Emergency Lights", lighting_data)
+        if extinguisher_data:
+            self.update_workbook("Extinguishers", extinguisher_data)
