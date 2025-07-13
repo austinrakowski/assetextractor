@@ -23,7 +23,10 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
             method_name = self.get_extraction_method(text)
             
             method = getattr(self, method_name)
-            result = method(file_path)
+            if method_name == "fire_pumps": 
+                result = method(file_path, text)
+            else: 
+                result = method(file_path)
             
             print(f"Successfully extracted data from {filename} using {method_name}")
             self.processed_files.append(filename)

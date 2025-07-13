@@ -1,8 +1,6 @@
 import re
 import pprint
 import random
-import inspect 
-
 
 class AssetTemplateMethods:
     """Methods for extracting data from different types of assets"""
@@ -18,10 +16,20 @@ class AssetTemplateMethods:
             "extinguishers" : {"type": 1, "devices": set()}, 
             "fire_pumps" : {"type": 0, "devices": set()}, 
             "smoke_alarms" : {"type": 1, "devices": set()},
-            "indicator_valves": {"type": 0, "devices": set()}, 
             "emergency_lighting": {"type": 1, "devices": set()},  
-            "emergency_lighting_extinguisher": {"type" : 1, "devices": set()}
+            "emergency_lighting_extinguisher": {"type" : 1, "devices": set()}, 
+            "special_suppression": {"type" : 1, "devices": set()}
         }
+
+        self.eml_mapping = {
+            'SPU' : ('NFPA 101: Emergency Escape Lighting: System Type', 'Self-Powered Unit'), 
+            'BP' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Battery Pack'), 
+            'RH' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Remote Head'), 
+            'EX' : ('NFPA 101: Emergency Escape Lighting: Exit Sign', 'Exit Sign'), 
+            'COM' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Combo Unit')
+        }
+
+        self.backflow_types = set()
 
         
     def fixed_extinguishing_systems(self, file_path):
@@ -51,9 +59,8 @@ class AssetTemplateMethods:
                         data[field_mappings[cell_text]] = cells[i + 1]
         
         #still capture asset if there is no serial number
-        identifier = data.get("Serial_Number") or f'None {random.randint(1000, 9999)}'
-        method_name = inspect.currentframe().f_code.co_name
-        if identifier not in self.method_type[method_name]['devices']:
+        identifier = data.get("Serial_Number") or f'None - {random.randint(1000, 9999)}'
+        if identifier not in self.method_type['fixed_extinguishing_systems']['devices']:
         
             self.update_workbook("Fixed Extinguishing Systems", [[
                 f"{data.get('Address', '')} {data.get('City', '')}",
@@ -66,7 +73,7 @@ class AssetTemplateMethods:
                 data.get('Size', '')
             ]])
         
-            self.method_type[method_name]['devices'].add(identifier)
+            self.method_type['fixed_extinguishing_systems']['devices'].add(identifier)
 
     def fire_hoses(self, file_path):
         """Extract data from Fire Hose Test and Inspection Template"""
@@ -96,8 +103,7 @@ class AssetTemplateMethods:
                     business_name = extracted_data.get("Business_Name", '')
 
                     identifier = f'{address_city} - {cells[1]}'
-                    method_name = inspect.currentframe().f_code.co_name
-                    if identifier not in self.method_type[method_name]['devices']:
+                    if identifier not in self.method_type['fire_hoses']['devices']:
                                     
                         hose_data.append([
                             address_city, business_name, cells[1], cells[2], 
@@ -105,7 +111,7 @@ class AssetTemplateMethods:
                             cells[7] if len(cells) > 7 else ""
                         ])
 
-                        self.method_type[method_name]['devices'].add(identifier)
+                        self.method_type['fire_hoses']['devices'].add(identifier)
                                  
         self.update_workbook("Fire Hoses", hose_data)
 
@@ -146,8 +152,7 @@ class AssetTemplateMethods:
                             data[category] = checkbox_text
         
         identifier = f'{data.get('Business_Name', '')} - {data.get('Hydrant_Number')}'
-        method_name = inspect.currentframe().f_code.co_name
-        if identifier not in self.method_type[method_name]['devices']:
+        if identifier not in self.method_type['fire_hydrants']['devices']:
         
             self.update_workbook("Fire Hydrants", [[
                 f"{data.get('Address', '')} {data.get('City', '')}",
@@ -160,7 +165,7 @@ class AssetTemplateMethods:
                 data.get('Type', '')
             ]])
 
-            self.method_type[method_name]['devices'].add(identifier)
+            self.method_type['fire_hydrants']['devices'].add(identifier)
 
         return None
             
@@ -176,6 +181,12 @@ class AssetTemplateMethods:
             "Postal Code:": "Postal_Code",
             "Location of Backflow Preventer:": "Location"
         }    
+
+        var_mapping = {
+            'RP' : 'Reduced Pressure Zone', 
+            'DCVA' : 'Double Check Valve Assembly', 
+            'RPBA': 'Reduced Pressure Backflow Assembly'
+        }
         
         for table in tables:
             for row_idx, row in enumerate(table.rows):
@@ -203,25 +214,26 @@ class AssetTemplateMethods:
                                 elif label == "Size":
                                     data["Size"] = prev_row_cells[j]
                         break
+        self.backflow_types.add(data.get('Type', ''))
         
         #still capture asset if there is no serial number
         identifier = data.get("Serial_Number") or f'None {random.randint(1000, 9999)}'
-        method_name = inspect.currentframe().f_code.co_name
-        if identifier not in self.method_type[method_name]['devices']:
+        if identifier not in self.method_type['backflows']['devices']:
         
             self.update_workbook("Backflows", [[
-                f"{data.get('Service_Address', '')} {data.get('Postal_Code', '')}",
                 data.get('Name_of_Premise', ''),
+                f"{data.get('Service_Address', '')} {data.get('Postal_Code', '')}",
+                "NFPA 25: Automatic Back-Flow Prevention", 
+                var_mapping.get(data.get('type', '')),
                 data.get('Manufacturer', ''),
                 data.get('Model_Number', ''),
                 data.get('Serial_Number', ''),
-                data.get('Type', ''),
                 data.get('Size', ''),
                 data.get('Location_of_Backflow_Preventer', '')
             ]])
 
-            self.method_type[method_name]['devices'].add(identifier)
-
+            self.method_type['backflows']['devices'].add(identifier)
+        
         return None
         
     def extinguishers(self, file_path):
@@ -256,9 +268,8 @@ class AssetTemplateMethods:
                     
                     address_city = f"{extracted_data.get('Address', '')} {extracted_data.get('City', '')}"
                     business_name = extracted_data.get("Business_Name", '')
-                    method_name = inspect.currentframe().f_code.co_name
                     identifier = cells[3] or f'None {random.randint(1000, 9999)}'
-                    if identifier not in self.method_type[method_name]['devices']:
+                    if identifier not in self.method_type['extinguishers']['devices']:
                     
                         extinguisher_data.append([
                             address_city, business_name, cells[0], cells[1], 
@@ -266,12 +277,12 @@ class AssetTemplateMethods:
                             cells[6] if len(cells) > 6 else ""
                         ])
 
-                        self.method_type[method_name]['devices'].add(identifier)
+                        self.method_type['extinguishers']['devices'].add(identifier)
                     
         self.update_workbook("Extinguishers", extinguisher_data)
         return None
     
-    def fire_pumps(self, file_path):
+    def fire_pumps(self, file_path, text):
         """Extract data from Fire Pump Annual Performance Tests Template"""
         
         tables = self.get_document_tables(file_path)
@@ -290,38 +301,47 @@ class AssetTemplateMethods:
             "Controller Model:": "Controller_Model", 
             "Date of Service:": "Date"
         }
-        
-        type_checkboxes = ["Centrifugal", "Turbine"]
-        power_checkboxes = ["Electric", "Diesel", "Steam"]
+
+        atv_mapping = { 
+            'Electric' : 'NFPA 25: Fire Pump: Electric', 
+            'Diesel' : 'NFPA 25: Fire Pump: Diesel', 
+            'Steam' : 'NFPA 25: Fire Pump: Steam'
+        }
         
         for table in tables:
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
                 
                 for i, cell_text in enumerate(cells):
-
-                    print(cell_text)
-                    # Handle regular field mappings
                     if cell_text in field_mappings and i + 1 < len(cells):
                         data[field_mappings[cell_text]] = cells[i + 1]
-                    
-                    # Handle type checkboxes
-                    for checkbox_type in type_checkboxes:
-                        if checkbox_type in cell_text and "☒" in cell_text:
-                            data["Type"] = checkbox_type
-                    
-                    # Handle power checkboxes
-                    for checkbox_power in power_checkboxes:
-                        if checkbox_power in cell_text and "☒" in cell_text:
-                            data["Power"] = checkbox_power
+        
+        pump_type = "Unknown"
+        power_type = "Unknown"
+        
+        if "Centrifugal ☒" in text:
+            pump_type = "Centrifugal"
+        elif "Turbine ☒" in text:
+            pump_type = "Turbine"
+    
+        if "Electric ☒" in text:
+            power_type = "Electric"
+        elif "Diesel ☒" in text:
+            power_type = "Diesel"
+        elif "Steam ☒" in text:
+            power_type = "Steam"
+        
+        identifier = f'{data.get("Business_Name", "")} - {data.get("System", "")}'
+        if identifier not in self.method_type['fire_pumps']["devices"]: 
 
-        method_name = inspect.currentframe().f_code.co_name
-        identifier = f'{data.get('Address', '')} - {data.get('System')}'
-        if identifier not in self.method_type[method_name]["devices"]: 
+            at = atv_mapping.get(power_type, 'Unknown')
+            variant = f"{pump_type} Pump"
         
             self.update_workbook("Fire Pumps", [[
                 f"{data.get('Address', '')} {data.get('City', '')}",
                 data.get('Business_Name', ''),
+                at, 
+                variant,
                 data.get('Location', ''),
                 data.get('System', ''),
                 data.get('Water_Supply_Source', ''),
@@ -329,11 +349,9 @@ class AssetTemplateMethods:
                 data.get('Pump_Model', ''),
                 data.get('Controller_Manufacturer', ''),
                 data.get('Controller_Model', ''),
-                data.get('Type', ''),
-                data.get('Power', '')
             ]])
 
-            self.method_type[method_name]["devices"].add(identifier)
+            self.method_type['fire_pumps']["devices"].add(identifier)
 
         return None
 
@@ -369,10 +387,9 @@ class AssetTemplateMethods:
                     
                     address = f"{extracted_data.get('Address', '')} {extracted_data.get('City', '')}"
                     business_name = extracted_data.get("Business_Name", '')
-                    method_name = inspect.currentframe().f_code.co_name
                     identifier = f'{address} - {cells[0]} - {cells[1]}'
 
-                    if identifier not in self.method_type[method_name]['devices']:
+                    if identifier not in self.method_type['smoke_alarms']['devices']:
                     
                         alarm_data.append([
                             address,
@@ -382,47 +399,12 @@ class AssetTemplateMethods:
                             cells[5] if len(cells) > 4 else ""  # Remarks
                         ])
 
-                        self.method_type[method_name]['devices'].add(identifier)
+                        self.method_type['smoke_alarms']['devices'].add(identifier)
 
         self.update_workbook("Smoke Alarms", alarm_data)
         return None
 
     
-    def indicator_valves(self, file_path):
-        """Extract data from Post Indicator Valve Inspection Template"""
-        
-        tables = self.get_document_tables(file_path)
-        data = {}
-        
-        field_mappings = {
-            "Business Name:": "Business_Name",
-            "Address:": "Address", 
-            "City:": "City",
-            "VALVE LOCATION:": "Valve_Location", 
-            "Date of Service" : "Date"
-        }
-        
-        for table in tables:
-            for row in table.rows:
-                cells = [cell.text.strip() for cell in row.cells]
-                
-                for i, cell_text in enumerate(cells):
-                    if cell_text in field_mappings and i + 1 < len(cells):
-                        data[field_mappings[cell_text]] = cells[i + 1]
-
-        method_name = inspect.currentframe().f_code.co_name
-        identifier = f'{data.get("Address", '')} - {data.get('Valve_Location')}'
-        if identifier not in self.method_type[method_name]["devices"]: 
-        
-            self.update_workbook("Indicator Valves", [[
-                f'{data.get('Address','')} {data.get('City','')}',
-                data.get('Business_Name', ''),
-                data.get('Valve_Location', '')
-            ]])
-
-            self.method_type[method_name]["devices"].add(identifier)
-
-        return None
     
     def emergency_lighting(self, file_path):
         """Extract data from Unit Emergency Lighting Test & Inspection Template"""
@@ -437,7 +419,7 @@ class AssetTemplateMethods:
             "City:": "City",
             "Date of Service:": "Date"
         }
-        
+
         for table in tables:
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
@@ -455,16 +437,22 @@ class AssetTemplateMethods:
                     business_name = extracted_data.get("Business_Name", '')
                     address = extracted_data.get("Address", '')
                     city = extracted_data.get("City", '')
-                    method_name = inspect.currentframe().f_code.co_name
                     identifier = f'{address} - {cells[0]} - {cells[1]}'
+                    asset_type = ''
+                    variant = ''
 
-                    if identifier not in self.method_type[method_name]["devices"]:
-                    
+                    if at := self.eml_mapping.get(cells[1], ''): 
+                        asset_type = at[0]
+                        variant = at[1]
+
+                    if identifier not in self.method_type["emergency_lighting"]["devices"]:
+
                         lighting_data.append([
                             f'{address} {city}',
                             business_name,
+                            asset_type if asset_type else (cells[1] or ''), 
+                            variant,
                             cells[0],  # Unit Location
-                            cells[1],  # Unit Type
                             cells[8] if len(cells) > 7 else "",  # Battery Size
                             cells[9] if len(cells) > 8 else "",  # Battery #
                             cells[10] if len(cells) > 9 else "",  # Battery Date
@@ -508,13 +496,20 @@ class AssetTemplateMethods:
                         address = extracted_data.get("Address", '')
                         city = extracted_data.get("City", '')
                         identifier = f'{address} - {cells[0]} - {cells[1]}'
+                        asset_type = ''
+                        variant = ''
+                        if at := self.eml_mapping.get(cells[1], ''): 
+                            asset_type = at[0]
+                            variant = at[1]
+
                         if identifier not in self.method_type['emergency_lighting']['devices']:
                         
                             lighting_data.append([
                                 f"{address} {city}",
                                 business_name,
+                                asset_type if asset_type else (cells[1] or ''), 
+                                variant,
                                 cells[0],  # Unit Location
-                                cells[1] if len(cells) > 1 else "",  # Unit Type
                                 cells[8] if len(cells) > 8 else "",  # Battery Size
                                 cells[9] if len(cells) > 9 else "",  # Battery #
                                 cells[10] if len(cells) > 10 else "", # Battery Date
@@ -555,3 +550,83 @@ class AssetTemplateMethods:
             self.update_workbook("Emergency Lights", lighting_data)
         if extinguisher_data:
             self.update_workbook("Extinguishers", extinguisher_data)
+    
+    def special_suppression(self, file_path):
+        """Extract data from Special Fire Suppression System Template"""
+        
+        tables = self.get_document_tables(file_path)
+        extracted_data = {}
+        suppression_data = []
+        
+        field_mappings = {
+            "Business Name:": "Business_Name",
+            "Address:": "Address", 
+            "City:": "City",
+        }
+        
+        system_types = [
+            "FM-200", "Halon 1301", "Dry Chemical", "Carbon Dioxide", 
+            "Argonite", "Novec 1230", "Foam", "Watermist", "Inergen"
+        ]
+
+        #asset type and variant mapping
+        atv_mapping = {
+            'FM-200' : ('NFPA 12A: Special Hazard: Gaseous (Cylinder)', 'HFC-227ea (FM-200, R-227)'), 
+            'Halon 1301' : ('NFPA 12A: Special Hazard: Halon (Fire Extinguishing System)', 'Halon 1301'), 
+            'Dry Chemical' : ('NFPA 17: Special Hazard: Dry Chemical (Fire Extinguishing System)', 'Dry Chemical Extinguishing System'), 
+            'Carbon Dioxide' : ('NFPA 12: Standard on Carbon Dioxide Extinguishing Systems', 'Carbon Dioxide Extinguishing System'), 
+            'Argonite' : ('NFPA 12A: Special Hazard: Gaseous (Cylinder)', 'IG-55 (Argonite)'), 
+            'Novec 1230': ('NFPA 2001: Special Hazard: Clean-Agent (Fire Extinguishing System)', 'FK-5-1-12 (Novec 1230)'), 
+            'Foam': ('NFPA 25: Special Hazard: Foam (Fire Extinguishing System)', 'AFFF (Aqueous Film Forming Foam)'), 
+            'Watermist': ('NFPA 750: Standard on Water Mist Fire Protection', 'Watermist'), 
+            'Inergen': ('NFPA 12A: Special Hazard: Gaseous (Cylinder)', 'Inergen')
+        }
+        
+        for table in tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                
+                for i, cell_text in enumerate(cells):
+                    if cell_text in field_mappings and i + 1 < len(cells):
+                        extracted_data[field_mappings[cell_text]] = cells[i + 1]
+                
+
+                for cell in cells:
+                    for system_type in system_types:
+                        if system_type in cell:
+
+                            row_data = cells
+                            make_value = ""
+                            model_value = ""
+                            
+                            for j, cell_content in enumerate(row_data):
+                                if cell_content == "Make:" and j + 1 < len(row_data):
+                                    make_value = row_data[j + 1]
+                                elif cell_content == "Model:" and j + 1 < len(row_data):
+                                    model_value = row_data[j + 1]
+                            
+                            if make_value or model_value:
+                                # Get asset type and variant from mapping
+                                asset_type, variant = atv_mapping.get(system_type, ('Unknown', 'Unknown'))
+
+                                business_name = extracted_data.get("Business_Name", '')
+                                address = extracted_data.get("Address", '')
+                                city = extracted_data.get("City", '')
+                                identifier = f"{business_name} - {make_value + ' - ' if make_value else ''}{model_value if model_value else ''}"
+                                
+                                if identifier not in self.method_type['special_suppression']['devices']: 
+                                
+                                    suppression_data.append([
+                                        f"{address} {city}",
+                                        business_name,
+                                        asset_type,
+                                        variant,
+                                        make_value,
+                                        model_value
+                                    ])
+
+                                    self.method_type['special_suppression']['devices'].add(identifier)
+        
+        if suppression_data:
+            self.update_workbook("Special Suppression", suppression_data)
+        

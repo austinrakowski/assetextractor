@@ -29,29 +29,29 @@ class AssetExtractorUtils:
                 "color", "shutoff_location", "type"
             ], 
             "Backflows" : [
-                "address", "name_of_premise", "manufacturer", "model_number", 
-                "serial_number", "type", "size", "location"
+                "name_of_premise", "address", "asset_type", "variant", "manufacturer", "model_number", 
+                "serial_number", "size", "location"
             ], 
             "Extinguishers": [
                 "address", "business_name", "location", "size", "brand", "serial_number", 
                 "manufacture_date", "next_service_date", "comments"
             ], 
             "Fire Pumps": [
-                "address", "business_name", "location", "system", "water_supply_source",
-                "pump_manufacturer", "pump_model", "controller_manufacturer", "controller_model", "type", "power"
+                "address", "business_name", "asset_type", "variant", "location", "system", 
+                "water_supply_source", "pump_manufacturer", "controller_manufacturer", "controller_model" 
             ], 
             "Smoke Alarms" : [
                 "address", "business_name", "device", "location", "remarks"
-            ], 
-            "Indicator Valves": [
-                "address", "business_name", "location"
-            ], 
+            ],  
             "Emergency Lights": [
-                "address", "business_name", "location", "unit_type", "battery_size",
+                "address", "business_name", "type", "variant", "location", "battery_size",
                 "battery #", "battery_date", "voltage / size", "comments"
+            ], 
+            "Special Suppression" : [
+                "address", "business_name", "asset_type", "variant", "make", "model"
             ]
         }
-
+       
         default_sheet = self.workbook.active
         self.workbook.remove(default_sheet)
 
@@ -72,6 +72,7 @@ class AssetExtractorUtils:
 
     def get_document_text(self, file_path): 
         doc = Document(file_path)
+        core_props = doc.core_properties
         full_text = []
     
         for paragraph in doc.paragraphs:
@@ -121,10 +122,7 @@ class AssetExtractorUtils:
             ], 
             'smoke_alarms' : [
                 'smoke alarm device record'
-            ], 
-            'indicator_valves': [
-                "post indicator valve inspection"
-            ], 
+            ],  
             'emergency_lighting': [
                 'unit emergency lighting test'
             ], 
@@ -133,6 +131,10 @@ class AssetExtractorUtils:
             ], 
             'extinguishers': [
                 'extinguisher test & inspection'
+            ], 
+            'special_suppression': [
+                'report for special fire suppression system', 
+                'novec 1230'
             ]
         }
         
@@ -141,3 +143,5 @@ class AssetExtractorUtils:
                 return method_name
         
         return None
+
+    
