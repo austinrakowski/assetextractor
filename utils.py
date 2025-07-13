@@ -17,15 +17,15 @@ class AssetExtractorUtils:
 
         sheets_with_headers = {
             "Fixed Extinguishing Systems": [
-                "address", "business_name", "last_recharge_date", "location_of_cylinders", 
-                "manufacturer", "model", "serial", "size", 
+                "address", "business_name", "asset_type", "variant", "last_recharge_date", "location_of_cylinders", 
+                "manufacturer", "model_number", "serial_number", "size", 
             ],
             "Fire Hoses": [
                 "address", "business_name", "location", "length", 
                 "size", "nozzle", "status", "next_ht", "notes"
             ],
             "Fire Hydrants": [
-                "address", "business_name", "hydrant_number", "make", "model",
+                "address", "business_name", "hydrant_number", "location", "make", "model",
                 "color", "shutoff_location", "type"
             ], 
             "Backflows" : [
@@ -49,6 +49,19 @@ class AssetExtractorUtils:
             ], 
             "Special Suppression" : [
                 "address", "business_name", "asset_type", "variant", "make", "model"
+            ], 
+            "Alarm Systems" : [
+                'address', 'ref', 'business_name', 'manufacturere', 'model_number', 
+                'fire_signal_receiving_centre', 'ulc_serial_number'
+            ], 
+            "Alarm System Devices": [
+                'system', 'asset_type', 'variant', 'zone_circuit_number' 
+            ], 
+            "Sprinkler Systems": [
+                'address', 'business_name', 'ref', 'asset_type', 'variant'
+            ],
+            "Sprinkler System Devices": [
+                "system", 'asset_type', 'variant', 'size'
             ]
         }
        
@@ -98,6 +111,40 @@ class AssetExtractorUtils:
             print(f"Error reading directory {self.directory_path}: {e}")
             return []
 
+    def _headers_match(self, actual_headers, target_headers):
+        """Check if actual headers match target headers (allowing for some flexibility)"""
+        if len(actual_headers) < len(target_headers):
+            return False
+    
+        key_matches = 0
+        for i, target in enumerate(target_headers):
+            if i < len(actual_headers):
+                # Normalize text for comparison
+                actual_normalized = actual_headers[i].replace('\n', ' ').replace('\r', '').strip()
+                target_normalized = target.replace('\n', ' ').replace('\r', '').strip()
+                
+                if actual_normalized.lower() == target_normalized.lower():
+                    key_matches += 1
+                elif target in ["A", "B", "C", "D", "E", "F", "G"] and actual_normalized == target:
+                    key_matches += 1
+        
+        return key_matches >= 7  
+    
+    def find_header_row(self, table, target_text):
+        """
+        Find the row index that contains the target header text.
+        Returns (row_index, column_index) if found, otherwise (None, None)
+        """
+        
+        for row_idx, row in enumerate(table.rows):
+            for col_idx, cell in enumerate(row.cells):
+                text = cell.text.strip()
+                val += text
+                if target_text in cell.text.strip():
+                    return row_idx, col_idx
+        
+        return None, None
+
     def get_extraction_method(self, text):
         """Determine which extraction method to use based on its content."""
         text_lower = text.lower()
@@ -135,6 +182,12 @@ class AssetExtractorUtils:
             'special_suppression': [
                 'report for special fire suppression system', 
                 'novec 1230'
+            ], 
+            'alarm_system_devices': [
+                'nbc', 'provides single-stage operation'
+            ], 
+            'sprinkler_systems': [
+                'is the fdc check valve free of leaks?'
             ]
         }
         

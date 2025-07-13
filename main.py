@@ -23,7 +23,7 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
             method_name = self.get_extraction_method(text)
             
             method = getattr(self, method_name)
-            if method_name == "fire_pumps": 
+            if method_name in ["fire_pumps", "alarm_system_devices"]: #pumps need text for non-table checkboxes, alarms need it for varying headers
                 result = method(file_path, text)
             else: 
                 result = method(file_path)
@@ -50,7 +50,6 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
         for filename in files:
             result = self.process_file(filename)
         
-        # Print summary
         print(f"\nProcessing Summary:")
         print(f"Successfully processed: {len(self.processed_files)} files")
         print(f"Failed to process: {len(self.failed_files)} files")
@@ -58,23 +57,6 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
         if self.failed_files:
             print(f"Failed files: {', '.join(self.failed_files)}")
 
-    def debug_file(self, filename):
-        """Debug a specific file to see its content and auto-detected method."""
-        file_path = os.path.join(self.directory_path, filename)
-        
-        try:
-            text = self.extract_text_from_pdf(file_path)
-            detected_method = self.get_extraction_method(text)
-            
-            print(f"File: {filename}")
-            print(f"Detected method: {detected_method}")
-            print("-" * 50)
-            print("Text")
-            print(text)
-            print("-" * 50)
-            
-        except Exception as e:
-            print(f"Error debugging {filename}: {e}")
 
     def get_stats(self):
         """Get processing statistics."""
