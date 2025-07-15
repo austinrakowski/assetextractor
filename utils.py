@@ -1,6 +1,5 @@
 import os
 from openpyxl import Workbook
-import pprint
 from docx import Document
 import os
 from dotenv import load_dotenv
@@ -17,7 +16,7 @@ class AssetExtractorUtils:
         self.directory_path = directory_path
         self.workbook = None
         self.create_workbook()
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.client = OpenAI(api_key=os.getenv('NOT_AI_API_KEY')) #gogreen
 
     def create_workbook(self):
         
@@ -47,10 +46,7 @@ class AssetExtractorUtils:
             "Fire Pumps": [
                 "address", "business_name", "asset_type", "variant", "location", "system", 
                 "water_supply_source", "pump_manufacturer", "controller_manufacturer", "controller_model" 
-            ], 
-            "Smoke Alarms" : [
-                "address", "business_name", "device", "location", "remarks"
-            ],  
+            ],   
             "Emergency Lights": [
                 "address", "business_name", "type", "variant", "location", "battery_size",
                 "battery #", "battery_date", "voltage / size", "comments"
@@ -91,7 +87,6 @@ class AssetExtractorUtils:
     def get_document_text(self, file_path): 
     
         doc = Document(file_path)
-        core_props = doc.core_properties
         full_text = []
 
         for paragraph in doc.paragraphs:
@@ -109,13 +104,12 @@ class AssetExtractorUtils:
                                 
                                 continue
                     except:
-                        #absolutely no idea why this doesnt work without these try / except blocks 
+                        #absolutely zero idea why this doesnt work without these try / except blocks lol
                         continue
             except:
                 
                 continue
-                
-       
+            
         return '\n'.join(full_text)
 
     def get_document_tables(self, file_path): 
@@ -124,21 +118,35 @@ class AssetExtractorUtils:
         return doc.tables
     
     def get_docx_files(self):
-        """Get list of .docx files in directory and all subdirectories."""
+
         docx_files = []
         try:
             for root, dirs, files in os.walk(self.directory_path):
                 for file in files:
+                    full_path = os.path.join(root, file)
                     if file.lower().endswith('.docx'):
-                        # Store relative path from base directory
-                        full_path = os.path.join(root, file)
+                    
                         relative_path = os.path.relpath(full_path, self.directory_path)
                         docx_files.append(relative_path)
+                    else:
+                        os.remove(full_path)
+           
+            for root, dirs, files in os.walk(self.directory_path, topdown=False):
+        
+                if root == self.directory_path:
+                    continue
+                try:
+                    if not os.listdir(root):
+                        os.rmdir(root)
+                except OSError:
+                    pass
+            
             return docx_files
+        
         except OSError as e:
             print(f"Error reading directory {self.directory_path}: {e}")
             return []
-
+        
     def _headers_match(self, actual_headers, target_headers):
         """Check if actual headers match target headers (allowing for some flexibility)"""
         if len(actual_headers) < len(target_headers):
@@ -173,43 +181,43 @@ class AssetExtractorUtils:
         return None, None
 
     def get_extraction_method(self, text):
-        """Determine which extraction method to use based on its content."""
+        """determine which method to use based unique words per each template. this randomly just stops working sometimes"""
         text_lower = text.lower()
         
         method_keywords = {
-            # 'fixed_extinguishing_systems': [
-            #     'inspection, testing and maintenance report for fixed extinguishing systems',
-            #     'location of system cylinders'
-            # ],
-            # 'fire_hoses': [
-            #     'fire hose test and inspection'
-            # ], 
-            # 'fire_hydrants' : [
-            #     'fire hydrant inspection & testing'
-            # ], 
-            # 'backflows': [
-            #     'location of backflow preventer'
-            # ], 
-            # 'fire_pumps': [
-            #     'fire pump annual performance tests', 
-            #     'pump has a prv installed'
-            # ], 
-            # 'smoke_alarms' : [
-            #     'smoke alarm device record'
-            # ],  
-            # 'emergency_lighting': [
-            #     'unit emergency lighting test'
-            # ], 
-            # 'emergency_lighting_extinguisher': [
-            #     'unit emergency lighting /'
-            # ], 
-            # 'extinguishers': [
-            #     'extinguisher test & inspection'
-            # ], 
-            # 'special_suppression': [
-            #     'report for special fire suppression system', 
-            #     'novec 1230'
-            # ], 
+            'fixed_extinguishing_systems': [
+                'inspection, testing and maintenance report for fixed extinguishing systems',
+                'location of system cylinders'
+            ],
+            'fire_hoses': [
+                'fire hose test and inspection'
+            ], 
+            'fire_hydrants' : [
+                'fire hydrant inspection & testing'
+            ], 
+            'backflows': [
+                'location of backflow preventer', 'double check assemblies'
+            ], 
+            'fire_pumps': [
+                'fire pump annual performance tests', 
+                'pump has a prv installed'
+            ], 
+            'smoke_alarms' : [
+                'smoke alarm device record'
+            ],  
+            'emergency_lighting': [
+                'unit emergency lighting test'
+            ], 
+            'emergency_lighting_extinguisher': [
+                'unit emergency lighting /'
+            ], 
+            'extinguishers': [
+                'extinguisher test & inspection'
+            ], 
+            'special_suppression': [
+                'report for special fire suppression system', 
+                'novec 1230'
+            ], 
             'alarm_system_devices': [
                 'nbc', 'provides single-stage operation'
             ], 
@@ -224,7 +232,10 @@ class AssetExtractorUtils:
         
         return None
 
+    #oooh how mysterious i wonder what api it is!! 
     def api_call(self, file_path, page, prompt): 
+        #needed this for 3 templates that had checkboxes that have the same properties when checked vs unchecked 
+        #my only chance of figuring this one out was gpt, so if you think about it im really just cutting out the middle man
 
         img = self.doc_to_base64(file_path, page)
         
@@ -274,10 +285,6 @@ class AssetExtractorUtils:
                 return None
                 
             base64_str = base64.b64encode(img_bytes).decode()
-            
-            # Write to txt file
-            with open('base64_output.txt', 'w') as f:
-                f.write(base64_str)
                 
             return base64_str
             

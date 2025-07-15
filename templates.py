@@ -8,7 +8,7 @@ class AssetTemplateMethods:
 
     def __init__(self):
 
-    
+        #type serves zero purpose I'm just too lazy to refactor after realzing it wasn't needed
         self.method_type = {
             "fixed_extinguishing_systems" : {"type" : 0, "devices": set()},
             "fire_hoses" : {"type": 1, "devices": set()},
@@ -27,6 +27,7 @@ class AssetTemplateMethods:
 
         }
 
+        #global bc 2 methods need it
         self.eml_mapping = {
             'SPU' : ('NFPA 101: Emergency Escape Lighting: System Type', 'Self-Powered Unit'), 
             'BP' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Battery Pack'), 
@@ -36,35 +37,8 @@ class AssetTemplateMethods:
             'INV' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Inverter'), 
             'BP' : ('NFPA 101: Emergency Escape Lighting & Exit Signs', 'Battery Pack'), 
         }
-
-        self.alarm_mapping = {
-        "M": ('NFPA 72: Fire Alarm System: Manual Pull Station (MPS)', 'Manual Pull Station'),
-        "DS": ('NFPA 72: Fire Alarm System: Detector', 'Smoke Duct'),
-        "B": ('NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual', 'Bell'),
-        "AD": ("NFPA 72: Fire Alarm System: Peripheral/Accessorie", 'Ancillary device'),
-        "HT": ("NFPA 72: Fire Alarm System: Detector", "Heat Detector"),
-        "RHT": ("NFPA 72: Fire Alarm System: Detector", "Heat Detector"),
-        "S": ("NFPA 72: Fire Alarm System: Detector", "Smoke Detector"),
-        "RI": ("NFPA 72: Smoke and Heat Alarm", "Remote Indicator Unit"),
-        "SFD": ("NFPA 72: Smoke and Heat Alarm", "Supporting Field Device Monitor"),
-        "FS": ("NFPA 72: Smoke and Heat Alarm", "Sprinkler Flow Switch"),
-        "SS": ("NFPA 72: Smoke and Heat Alarm", "Sprinkler Supervisory Device"),
-        "FM": ("NFPA 72: Smoke and Heat Alarm", "Isolation Module"),
-        "H": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Horn"),
-        "V": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Visual Warning Device"),
-        "SP": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Cone Type Speaker"),
-        "HSP": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Horn Type Speaker"),
-        "ET": ("NFPA 72: Two-Way Emergency Communication System", "Emergency Telephone"),
-        "EOL": ("NFPA 72: Fire Alarm System: Peripheral/Accessorie", "End of Line Resister (EOLR)"),
-        "PZ": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "In-Suite Buzzer"), 
-        "AV": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "A/V Device"),
-        "SA": ("NFPA 72: Smoke and Heat Alarm", "Smoke Alarm"),
-        "O": ("NFPA 72: Smoke and Heat Alarm", "Override"), 
-        
-    }
         
     def fixed_extinguishing_systems(self, file_path):
-        """Extract data from Fixed Extinguishing Systems Template"""
 
         response = self.api_call(file_path, page=0, prompt=Prompts.fixed_extinguishing_systems)
         data = response.split(',')
@@ -117,8 +91,7 @@ class AssetTemplateMethods:
             self.method_type['fixed_extinguishing_systems']['devices'].add(identifier)
 
     def fire_hydrants(self, file_path):
-        """Extract data from Fire Hydrant Inspection & Testing Template"""
-
+ 
         response = self.api_call(file_path, page=0, prompt=Prompts.hydrants)
         data = response.split(',')
 
@@ -149,7 +122,6 @@ class AssetTemplateMethods:
         return None
             
     def backflows(self, file_path):
-        """Extract data from Backflow Prevention Assembly Test Report Template"""
 
         response = self.api_call(file_path, page=0, prompt=Prompts.backflow_page_1)
         data = response.split(',')
@@ -189,7 +161,6 @@ class AssetTemplateMethods:
         return None
         
     def extinguishers(self, file_path):
-        """Extract data from Fire Extinguisher Test & Inspection Template"""
         
         tables = self.get_document_tables(file_path)
         extracted_data = {}
@@ -212,6 +183,7 @@ class AssetTemplateMethods:
                 
             
                 if (len(cells) >= 6 and 
+                    len(set(cells)) > 2 and
                     cells[0] and 
                     cells[0] not in ["Location", "Mfg. Date", "Service Date", "Business Name:"] and
                     not any(header in cells[0] for header in ["Column Legend", "Dates", "Major Service"]) and
@@ -234,7 +206,6 @@ class AssetTemplateMethods:
         return None
     
     def fire_pumps(self, file_path, text):
-        """Extract data from Fire Pump Annual Performance Tests Template"""
         
         tables = self.get_document_tables(file_path)
         data = {}
@@ -308,7 +279,6 @@ class AssetTemplateMethods:
 
         
     def emergency_lighting(self, file_path):
-        """Extract data from Unit Emergency Lighting Test & Inspection Template"""
         
         tables = self.get_document_tables(file_path)
         extracted_data = {}
@@ -330,6 +300,7 @@ class AssetTemplateMethods:
                         extracted_data[field_mappings[cell_text]] = cells[i + 1]
                 
                 if (len(cells) >= 7 and 
+                    len(set(cells)) > 2 and
                     cells[0] and 
                     cells[0] not in ["Unit Location", "Business Name:", "SPU", "BP", "RH", "EX", "COM"] and
                     not any(header in cells[0] for header in ["Monthly", "Annual", "UNIT TYPES", "Yes", "No"]) and
@@ -366,7 +337,6 @@ class AssetTemplateMethods:
         self.update_workbook("Emergency Lights", lighting_data)
 
     def emergency_lighting_extinguisher(self, file_path):
-        """Extract data from Unit Emergency Lighting / Extinguisher Test & Inspection Template"""
         
         tables = self.get_document_tables(file_path)
         extracted_data = {}
@@ -392,7 +362,8 @@ class AssetTemplateMethods:
             for row_idx, row in enumerate(tables[4].rows):
                 if row_idx >= 2:  
                     cells = [cell.text.strip() for cell in row.cells]
-                    if cells[0]: 
+
+                    if len(set(cells)) > 2 and cells[0]: 
                         business_name = extracted_data.get("Business_Name", '')
                         address = extracted_data.get("Address", '')
                         city = extracted_data.get("City", '')
@@ -420,12 +391,13 @@ class AssetTemplateMethods:
 
                             self.method_type['emergency_lighting']['devices'].add(identifier)
         
+    
         # Extract fire extinguisher data
         if len(tables) > 6:
             for row_idx, row in enumerate(tables[6].rows):
                 if row_idx >= 1:
                     cells = [cell.text.strip() for cell in row.cells]
-                    if cells[0]: 
+                    if len(set(cells)) > 2 and cells[0]:
                         business_name = extracted_data.get("Business_Name", '')
                         address = extracted_data.get("Address", '')
                         city = extracted_data.get("City", '')
@@ -453,7 +425,6 @@ class AssetTemplateMethods:
             self.update_workbook("Extinguishers", extinguisher_data)
     
     def special_suppression(self, file_path):
-        """Extract data from Special Fire Suppression System Template"""
         
         tables = self.get_document_tables(file_path)
         extracted_data = {}
@@ -470,7 +441,6 @@ class AssetTemplateMethods:
             "Argonite", "Novec 1230", "Foam", "Watermist", "Inergen"
         ]
 
-        #asset type and variant mapping
         atv_mapping = {
             'FM-200' : ('NFPA 12A: Special Hazard: Gaseous (Cylinder)', 'HFC-227ea (FM-200, R-227)'), 
             'Halon 1301' : ('NFPA 12A: Special Hazard: Halon (Fire Extinguishing System)', 'Halon 1301'), 
@@ -507,7 +477,7 @@ class AssetTemplateMethods:
                                     model_value = row_data[j + 1]
                             
                             if make_value or model_value:
-                                # Get asset type and variant from mapping
+            
                                 asset_type, variant = atv_mapping.get(system_type, ('Unknown', 'Unknown'))
 
                                 business_name = extracted_data.get("Business_Name", '')
@@ -534,6 +504,32 @@ class AssetTemplateMethods:
 
     def alarm_system_devices(self, file_path, text):
 
+        alarm_mapping = {
+        "M": ('NFPA 72: Fire Alarm System: Manual Pull Station (MPS)', 'Manual Pull Station'),
+        "DS": ('NFPA 72: Fire Alarm System: Detector', 'Smoke Duct'),
+        "B": ('NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual', 'Bell'),
+        "AD": ("NFPA 72: Fire Alarm System: Peripheral/Accessorie", 'Ancillary device'),
+        "HT": ("NFPA 72: Fire Alarm System: Detector", "Heat Detector"),
+        "RHT": ("NFPA 72: Fire Alarm System: Detector", "Heat Detector"),
+        "S": ("NFPA 72: Fire Alarm System: Detector", "Smoke Detector"),
+        "RI": ("NFPA 72: Smoke and Heat Alarm", "Remote Indicator Unit"),
+        "SFD": ("NFPA 72: Smoke and Heat Alarm", "Supporting Field Device Monitor"),
+        "FS": ("NFPA 72: Smoke and Heat Alarm", "Sprinkler Flow Switch"),
+        "SS": ("NFPA 72: Smoke and Heat Alarm", "Sprinkler Supervisory Device"),
+        "FM": ("NFPA 72: Smoke and Heat Alarm", "Isolation Module"),
+        "H": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Horn"),
+        "V": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Visual Warning Device"),
+        "SP": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Cone Type Speaker"),
+        "HSP": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "Horn Type Speaker"),
+        "ET": ("NFPA 72: Two-Way Emergency Communication System", "Emergency Telephone"),
+        "EOL": ("NFPA 72: Fire Alarm System: Peripheral/Accessorie", "End of Line Resister (EOLR)"),
+        "PZ": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "In-Suite Buzzer"), 
+        "AV": ("NFPA 72: Sound and Intercom For Emergency Purposes: Audible/Visual", "A/V Device"),
+        "SA": ("NFPA 72: Smoke and Heat Alarm", "Smoke Alarm"),
+        "O": ("NFPA 72: Smoke and Heat Alarm", "Override"), 
+        
+        }
+
         tables = self.get_document_tables(file_path)
         if not tables:
             return
@@ -546,9 +542,8 @@ class AssetTemplateMethods:
         target_table = None
         device_data = []
                         
-        # Process the first table (which contains the header information)
         if tables and len(tables) > 0:
-            if 'nbc' in text.lower(): 
+            if 'nbc' in text.lower(): #forgot why this works
                 uid = self.alarm_system_new(tables[0])
             else: 
                 uid = self.alarm_system_old_fav(tables[0])
@@ -582,8 +577,8 @@ class AssetTemplateMethods:
                         if "X" in cells[0].upper(): 
                             cells[0] = cells[0][:1]
                     
-                        at = self.alarm_mapping.get(cells[0].upper(), ['', ''])[0]
-                        var = self.alarm_mapping.get(cells[0].upper(), ['', ''])[1]
+                        at = alarm_mapping.get(cells[0].upper(), ['', ''])[0]
+                        var = alarm_mapping.get(cells[0].upper(), ['', ''])[1]
 
                         if not at: 
                             at = cells[0]
@@ -621,9 +616,7 @@ class AssetTemplateMethods:
 
             if len(table.rows) > 9:
                 row_9_cells = [cell.text.strip() for cell in table.rows[9].cells]                
-                row_10_cells = [cell.text.strip() for cell in table.rows[10].cells]
                 
-                # Add length checks before accessing cells
                 if len(row_9_cells) > 6:
                     data["manufacturer"] = row_9_cells[6]
                 
@@ -735,7 +728,7 @@ class AssetTemplateMethods:
 
         if data.get('Wet_System', ''): 
             
-            identifier = f'{data.get('Address', '')} - {data.get('REPORT OF INSPECTION/TEST FOR WET SYSTEM:', '')}'
+            identifier = f'{data.get('Address', '')} - {data.get('Wet_System', '')}'
             if identifier not in self.method_type['wet_systems']['devices']: 
                 self.update_workbook("Sprinkler Systems", [[
                         f"{data.get('Address', '')} {data.get('City', '')}",
@@ -746,7 +739,7 @@ class AssetTemplateMethods:
 
         if data.get('Dry_System', ''): 
             
-            identifier = f'{data.get('Address', '')} - {data.get('REPORT OF INSPECTION/TEST FOR DRY SYSTEM:', '')}'
+            identifier = f'{data.get('Address', '')} - {data.get('Dry_System', '')}'
             if identifier not in self.method_type['dry_systems']['devices']: 
                 self.update_workbook("Sprinkler Systems", [[
                         f"{data.get('Address', '')} {data.get('City', '')}",
@@ -756,5 +749,3 @@ class AssetTemplateMethods:
                     ]])
        
         return None
-
-

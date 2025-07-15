@@ -36,6 +36,9 @@ class AssetExtractor(AssetExtractorUtils, AssetTemplateMethods):
         """Process a single file."""
         file_path = os.path.join(self.directory_path, filename)
         
+        if "Old Customers" in file_path: 
+            os.remove(file_path)
+        
         try:
             print(f"Processing: {filename}")
         

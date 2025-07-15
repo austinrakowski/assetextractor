@@ -1,97 +1,84 @@
-class Prompts: 
+class Prompts:
 
     hydrants = """
-    Please observe this document and extract the following from it:
+    EXTRACT EXACTLY 10 VALUES FROM THIS DOCUMENT IN THIS EXACT ORDER:
 
-    - Private / Public (depending on which checkbox is selected)
-    - Hydrant #
-    - Address (combine address and city for me to make a proper british columbia address)
-    - Date of service (converted to unix timestamp)
-    - Make
-    - Model
-    - Color
-    - Hydrant Shut-Off Location
-    - Hydrant Location
-    - Business Name
+    1. Private or Public (check which checkbox is selected - if neither, use 'blank')
+    2. Hydrant # (the hydrant number - if missing, use 'blank')
+    3. Address (combine street address + city into single BC address - if missing, use 'blank')
+    4. Date of service (convert to unix timestamp - if missing, use 'blank')
+    5. Make (if missing, use 'blank')
+    6. Model (if missing, use 'blank')
+    7. Color (if missing, use 'blank')
+    8. Hydrant Shut-Off Location (if missing, use 'blank')
+    9. Hydrant Location (if missing, use 'blank')
+    10. Business Name (if missing, use 'blank')
 
-    please return your response as nothing but a comma seperated list with no spaces between. It is very imporant that you return nothing but that.
+    CRITICAL FORMATTING RULES:
+    - Output ONLY the comma-separated values with NO spaces after commas
+    - Remove ALL commas from extracted values before outputting
+    - Replace any missing/empty fields with exactly 'blank'
+    - Must return exactly 10 values separated by commas
+    - No explanatory text, headers, or additional content
 
-    If there are any commas in any of the values that you extract, remove them from the string before giving me your response. 
-
-    If there are any blanks in the fields i requested, please add them as 'blank' to your response. 
-    
+    Example format: Public,H-001,123 Main St Vancouver BC,1672531200,Acme,Model-X,Red,Street,Corner,ABC Company
     """
 
     fixed_extinguishing_systems = """
+    EXTRACT EXACTLY 9 VALUES FROM THIS DOCUMENT IN THIS EXACT ORDER:
 
-    Please observe this document and extract the following from it:
+    1. Wet Chemical or Dry Chemical (check which checkbox is selected - if both checked, use 'Wet Chemical' - if neither, use 'blank')
+    2. Last Recharge Date (if missing, use 'blank')
+    3. Address (combine street address + city into single BC address - if missing, use 'blank')
+    4. Business Name (if missing, use 'blank')
+    5. Location of System Cylinders (if missing, use 'blank')
+    6. Electric or Gas (check which checkbox is selected - if neither, use 'blank')
+    7. Manufacturer (if missing, use 'blank')
+    8. Model Number (if missing, use 'blank')
+    9. Serial Number (if missing, use 'blank')
 
-    - Wet Chemical / Dry Chemical (depending on which checkbox is selected)
-    - Last Recharge Date
-    - Address (combine address and city for me to make a proper british columbia address)
-    - Business Name
-    - Location of System Cylinders
-    - Electric / Gas (depending on which checkbox is selected)
-    - Manufacturer
-    - Model Number
-    - Serial Number
+    CRITICAL FORMATTING RULES:
+    - Output ONLY the comma-separated values with NO spaces after commas
+    - Remove ALL commas from extracted values before outputting
+    - Replace any missing/empty fields with exactly 'blank'
+    - Must return exactly 9 values separated by commas
+    - No explanatory text, headers, or additional content
 
-    please return your response as nothing but a comma seperated list with no spaces between each item (the items themselves can have spaces). It is very imporant that you return nothing but that and in that exact order.
-
-    If there are any commas in any of the values that you extract, remove them from the string before giving me your response. 
-
-    If there are any blanks in the fields I requested, please add them as 'blank' to your response. 
-
-    If for any reason both Wet and Dry chemical are selected, default to Wet Chemical
-
+    Example format: Wet Chemical,2024-01-15,123 Main St Vancouver BC,ABC Restaurant,Kitchen,Gas,Ansul,R-102,SN123456
     """
 
     backflow_page_1 = """
+    EXTRACT EXACTLY 7 VALUES FROM THIS DOCUMENT IN THIS EXACT ORDER:
 
-    Please observe this document and extract the following from it:
+    1. Name of Premise (if missing, use 'blank')
+    2. Service Address (if missing, use 'blank')
+    3. Manufacturer (if missing, use 'blank')
+    4. Model # (if missing, use 'blank')
+    5. Serial # (if missing, use 'blank')
+    6. Type (if missing, use 'blank')
+    7. Size (if missing, use 'blank')
 
-    -Name of Premise
-    -Service Address
-    -Manufacturer 
-    -Model #
-    -Serial #
-    -Type 
-    -Size
+    CRITICAL FORMATTING RULES:
+    - Output ONLY the comma-separated values with NO spaces after commas
+    - Remove ALL commas from extracted values before outputting
+    - Replace any missing/empty fields with exactly 'blank'
+    - Must return exactly 7 values separated by commas
+    - No explanatory text, headers, or additional content
 
-    please return your response as nothing but a comma seperated list with no spaces between each item (the items themselves can have spaces). It is very imporant that you return nothing but that and in that exact order.
-
-    If there are any commas in any of the values that you extract, remove them from the string before giving me your response. 
-
-    If there are any blanks in the fields I requested, please add them as 'blank' to your response.
-
+    Example format: ABC Building,123 Main St,Watts,909,12345,RPZ,2 inch
     """
 
     backflow_page_2 = """
+    EXTRACT THE LOCATION OF THE BACKFLOW PREVENTER FROM THIS DOCUMENT.
 
-    please look at this document and tell me where the backflow preventer is located. It is very important that your response contains only the location of the backflow preventer
-    and nothing else. If that field happens to be blank, only respond with 'unknown'
+    CRITICAL FORMATTING RULES:
+    - Output ONLY the location text with no additional words
+    - If the location field is blank or missing, output exactly 'unknown'
+    - Remove any commas from the location before outputting
+    - No explanatory text or additional content
 
-
+    Example outputs: 
+    - Basement utility room
+    - unknown
+    - Front yard near meter
     """
-
-    backflow_page_1 = """
-
-    Please observe this document and extract the following from it:
-
-    -Name of Premise
-    -Service Address
-    -Manufacturer 
-    -Model #
-    -Serial #
-    -Type 
-    -Size
-
-    please return your response as nothing but a comma seperated list with no spaces between each item (the items themselves can have spaces). It is very imporant that you return nothing but that and in that exact order.
-
-    If there are any commas in any of the values that you extract, remove them from the string before giving me your response. 
-
-    If there are any blanks in the fields I requested, please add them as 'blank' to your response.
-
-    """
-
-
