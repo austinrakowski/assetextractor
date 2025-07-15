@@ -148,7 +148,7 @@ class AssetTemplateMethods:
                 business_name,
                 address,
                 "NFPA 25: Automatic Back-Flow Prevention", 
-                var_mapping.get(type, ''),
+                var_mapping.get(type, type),
                 manufacturer,
                 model,
                 serial,
@@ -195,9 +195,15 @@ class AssetTemplateMethods:
                     if identifier not in self.method_type['extinguishers']['devices']:
                     
                         extinguisher_data.append([
-                            address_city, business_name, cells[0], cells[1], 
-                            cells[2], cells[3], cells[4], cells[5],
-                            cells[6] if len(cells) > 6 else ""
+                            address_city, 
+                            business_name,
+                            cells[0], 
+                            cells[1], 
+                            cells[2], 
+                            cells[3], 
+                            cells[4], 
+                            cells[5],
+                            cells[6] if len(cells) > 6 else "", 
                         ])
 
                         self.method_type['extinguishers']['devices'].add(identifier)
@@ -390,8 +396,7 @@ class AssetTemplateMethods:
                             ])
 
                             self.method_type['emergency_lighting']['devices'].add(identifier)
-        
-    
+
         # Extract fire extinguisher data
         if len(tables) > 6:
             for row_idx, row in enumerate(tables[6].rows):
@@ -409,12 +414,14 @@ class AssetTemplateMethods:
                                 f"{address} {city}",
                                 business_name,
                                 cells[0],  # Location
-                                cells[1] if len(cells) > 1 else "",  # Size/Type
-                                cells[2] if len(cells) > 2 else "",  # Brand
-                                cells[3] if len(cells) > 3 else "",  # Serial #
-                                cells[4] if len(cells) > 4 else "",  # Mfg. Date
-                                cells[5] if len(cells) > 5 else "",  # Next Service Date
-                                cells[6] if len(cells) > 6 else ""   # Comments
+                                "", #parsing logic doesnt pick up the second column of this table for whatever reason
+                                cells[1] if len(cells) > 1 else "",  
+                                cells[2] if len(cells) > 2 else "",  
+                                cells[3] if len(cells) > 3 else "",  
+                                cells[4] if len(cells) > 4 else "",  
+                                cells[5] if len(cells) > 5 else "",  
+                                cells[6] if len(cells) > 6 else ""   
+                            
                             ])
 
                             self.method_type["extinguishers"]["devices"].add(identifier)
