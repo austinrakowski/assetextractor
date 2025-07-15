@@ -25,7 +25,7 @@ class AssetExtractorUtils:
         sheets_with_headers = {
             "Fixed Extinguishing Systems": [
                 "address", "business_name", "asset_type", "variant", "last_recharge_date", "location_of_cylinders", 
-                "manufacturer", "model_number", "serial_number", "size", 
+                "manufacturer", "model_number", "serial_number", "power", 
             ],
             "Fire Hoses": [
                 "address", "business_name", "location", "length", 
