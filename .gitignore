@@ -3,3 +3,4 @@ frdocs/
 venv/
 *.xlsx
 __pycache__
+*.env

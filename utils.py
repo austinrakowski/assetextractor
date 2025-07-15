@@ -1,15 +1,23 @@
 import os
-import re
 from openpyxl import Workbook
 import pprint
 from docx import Document
-import inspect 
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+import base64
+import base64
+from io import BytesIO
+import aspose.words as aw
+
 
 class AssetExtractorUtils:
     def __init__(self, directory_path):
+        load_dotenv()
         self.directory_path = directory_path
         self.workbook = None
         self.create_workbook()
+        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
     def create_workbook(self):
         
@@ -58,11 +66,8 @@ class AssetExtractorUtils:
                 'system', 'asset_type', 'variant', 'zone_circuit_number' 
             ], 
             "Sprinkler Systems": [
-                'address', 'business_name', 'ref', 'asset_type', 'variant'
-            ],
-            "Sprinkler System Devices": [
-                "system", 'asset_type', 'variant', 'size'
-            ]
+                'address', 'business_name', 'asset_description'
+            ],    
         }
        
         default_sheet = self.workbook.active
@@ -84,18 +89,33 @@ class AssetExtractorUtils:
         self.workbook.save("assets.xlsx")
 
     def get_document_text(self, file_path): 
+    
         doc = Document(file_path)
         core_props = doc.core_properties
         full_text = []
-    
+
         for paragraph in doc.paragraphs:
             full_text.append(paragraph.text)
-    
+
         for table in doc.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    full_text.append(cell.text)
+            try:
+                for row in table.rows:
+                    try:
+                        for cell in row.cells:
         
+                            try:
+                                full_text.append(cell.text)
+                            except:
+                                
+                                continue
+                    except:
+                        #absolutely no idea why this doesnt work without these try / except blocks 
+                        continue
+            except:
+                
+                continue
+                
+       
         return '\n'.join(full_text)
 
     def get_document_tables(self, file_path): 
@@ -104,9 +124,17 @@ class AssetExtractorUtils:
         return doc.tables
     
     def get_docx_files(self):
-        """Get list of PDF files in directory."""
+        """Get list of .docx files in directory and all subdirectories."""
+        docx_files = []
         try:
-            return [f for f in os.listdir(self.directory_path) if f.lower().endswith('.docx')]
+            for root, dirs, files in os.walk(self.directory_path):
+                for file in files:
+                    if file.lower().endswith('.docx'):
+                        # Store relative path from base directory
+                        full_path = os.path.join(root, file)
+                        relative_path = os.path.relpath(full_path, self.directory_path)
+                        docx_files.append(relative_path)
+            return docx_files
         except OSError as e:
             print(f"Error reading directory {self.directory_path}: {e}")
             return []
@@ -130,16 +158,15 @@ class AssetExtractorUtils:
         
         return key_matches >= 7  
     
-    def find_header_row(self, table, target_text):
+    def find_header_row(self, table, target_text, w=False):
         """
         Find the row index that contains the target header text.
         Returns (row_index, column_index) if found, otherwise (None, None)
         """
-        
+    
         for row_idx, row in enumerate(table.rows):
             for col_idx, cell in enumerate(row.cells):
                 text = cell.text.strip()
-                val += text
                 if target_text in cell.text.strip():
                     return row_idx, col_idx
         
@@ -150,39 +177,39 @@ class AssetExtractorUtils:
         text_lower = text.lower()
         
         method_keywords = {
-            'fixed_extinguishing_systems': [
-                'inspection, testing and maintenance report for fixed extinguishing systems',
-                'location of system cylinders'
-            ],
-            'fire_hoses': [
-                'fire hose test and inspection'
-            ], 
-            'fire_hydrants' : [
-                'fire hydrant inspection & testing'
-            ], 
-            'backflows': [
-                'location of backflow preventer'
-            ], 
-            'fire_pumps': [
-                'fire pump annual performance tests', 
-                'pump has a prv installed'
-            ], 
-            'smoke_alarms' : [
-                'smoke alarm device record'
-            ],  
-            'emergency_lighting': [
-                'unit emergency lighting test'
-            ], 
-            'emergency_lighting_extinguisher': [
-                'unit emergency lighting /'
-            ], 
-            'extinguishers': [
-                'extinguisher test & inspection'
-            ], 
-            'special_suppression': [
-                'report for special fire suppression system', 
-                'novec 1230'
-            ], 
+            # 'fixed_extinguishing_systems': [
+            #     'inspection, testing and maintenance report for fixed extinguishing systems',
+            #     'location of system cylinders'
+            # ],
+            # 'fire_hoses': [
+            #     'fire hose test and inspection'
+            # ], 
+            # 'fire_hydrants' : [
+            #     'fire hydrant inspection & testing'
+            # ], 
+            # 'backflows': [
+            #     'location of backflow preventer'
+            # ], 
+            # 'fire_pumps': [
+            #     'fire pump annual performance tests', 
+            #     'pump has a prv installed'
+            # ], 
+            # 'smoke_alarms' : [
+            #     'smoke alarm device record'
+            # ],  
+            # 'emergency_lighting': [
+            #     'unit emergency lighting test'
+            # ], 
+            # 'emergency_lighting_extinguisher': [
+            #     'unit emergency lighting /'
+            # ], 
+            # 'extinguishers': [
+            #     'extinguisher test & inspection'
+            # ], 
+            # 'special_suppression': [
+            #     'report for special fire suppression system', 
+            #     'novec 1230'
+            # ], 
             'alarm_system_devices': [
                 'nbc', 'provides single-stage operation'
             ], 
@@ -196,5 +223,65 @@ class AssetExtractorUtils:
                 return method_name
         
         return None
+
+    def api_call(self, file_path, page, prompt): 
+
+        img = self.doc_to_base64(file_path, page)
+        
+        try:
+        
+            response = self.client.chat.completions.create(
+                model="gpt-4o",  
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{img}"
+                                },
+                            },
+                        ],
+                    }
+                ],
+                max_tokens=5000,
+                timeout=30  
+            )
+            print(response.choices[0].message.content)
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            print(f"Error type: {type(e)}")
+    
+
+    def doc_to_base64(self, doc_path, page):
+        try:
+            doc = aw.Document(doc_path)
+            options = aw.saving.ImageSaveOptions(aw.SaveFormat.PNG)
+            options.horizontal_resolution = 600
+            options.vertical_resolution = 600
+            options.page_set = aw.saving.PageSet(page)
+            
+            stream = BytesIO()
+            doc.save(stream, options)
+            stream.seek(0)
+            
+            img_bytes = stream.getvalue()
+            if len(img_bytes) == 0:
+                return None
+                
+            base64_str = base64.b64encode(img_bytes).decode()
+            
+            # Write to txt file
+            with open('base64_output.txt', 'w') as f:
+                f.write(base64_str)
+                
+            return base64_str
+            
+        except Exception as e:
+            return None
 
     
