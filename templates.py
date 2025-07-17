@@ -414,7 +414,7 @@ class AssetTemplateMethods:
                                 f"{address} {city}",
                                 business_name,
                                 cells[0],  # Location
-                                "", #parsing logic doesnt pick up the second column of this table for whatever reason
+                                '',
                                 cells[1] if len(cells) > 1 else "",  
                                 cells[2] if len(cells) > 2 else "",  
                                 cells[3] if len(cells) > 3 else "",  
