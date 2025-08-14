@@ -10,8 +10,8 @@ class Prompts:
     5. Make (if missing, use 'blank')
     6. Model (if missing, use 'blank')
     7. Color (if missing, use 'blank')
-    8. Hydrant Shut-Off Location (if missing, use 'blank')
-    9. Hydrant Location (if missing, use 'blank')
+    8. Hydrant Shut-Off Location (if missing, use 'blank') - this is towards the top of the page
+    9. Hydrant Location (if missing, use 'blank') - this is towards the bottom of the page
     10. Business Name (if missing, use 'blank')
 
     CRITICAL FORMATTING RULES:
@@ -48,7 +48,7 @@ class Prompts:
     """
 
     backflow_page_1 = """
-    EXTRACT EXACTLY 7 VALUES FROM THIS DOCUMENT IN THIS EXACT ORDER:
+    EXTRACT EXACTLY 8 VALUES FROM THIS DOCUMENT IN THIS EXACT ORDER:
 
     1. Name of Premise (if missing, use 'blank')
     2. Service Address (if missing, use 'blank')
@@ -57,6 +57,7 @@ class Prompts:
     5. Serial # (if missing, use 'blank')
     6. Type (if missing, use 'blank')
     7. Size (if missing, use 'blank')
+    8. Serves (if missing, use 'blank')
 
     CRITICAL FORMATTING RULES:
     - Output ONLY the comma-separated values with NO spaces after commas
@@ -81,4 +82,17 @@ class Prompts:
     - Basement utility room
     - unknown
     - Front yard near meter
+    """
+
+    appliance_types = """
+    EXTRACT ALL THE VALUES FROM THE EQUIPMENT PROTECTED TABLE
+
+    CRITICAL FORMATTING RULES:
+    - Output ONLY the location text with no additional words
+    - If entire table is blank, output exactly "Unknown"
+    - No explanatory text or additional content
+    - Provide the response in a comma seperated string with the prefix "Devices Protected: " 
+
+    Example outputs: 
+    Devices Protected: Fryer, hood, blender
     """

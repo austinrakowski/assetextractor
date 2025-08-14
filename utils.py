@@ -25,7 +25,7 @@ class AssetExtractorUtils:
         sheets_with_headers = {
             "Fixed Extinguishing Systems": [
                 "address", "business_name", "asset_type", "variant", "last_recharge_date", "location_of_cylinders", 
-                "manufacturer", "model_number", "serial_number", "power", 
+                "manufacturer", "model_number", "serial_number", "power", "notes" 
             ],
             "Fire Hoses": [
                 "address", "business_name", "location", "length", 
@@ -33,11 +33,11 @@ class AssetExtractorUtils:
             ],
             "Fire Hydrants": [
                 "address", "business_name", "hydrant_number", "location", "make", "model",
-                "color", "shutoff_location", "type"
+                "color", "shutoff_location", "location", "type"
             ], 
             "Backflows" : [
                 "name_of_premise", "address", "asset_type", "variant", "manufacturer", "model_number", 
-                "serial_number", "size", "location"
+                "serial_number", "size", "location", "serves"
             ], 
             "Extinguishers": [
                 "address", "business_name", "location", "size", "brand", "serial_number", 

@@ -53,6 +53,8 @@ class AssetTemplateMethods:
         model_num = data[7]
         serial = data[8]
 
+        devices_protected = self.api_call(file_path, page=0, prompt=Prompts.appliance_types)
+
         if "wet" in chem_type.lower(): 
             ct = 1
         else: 
@@ -86,12 +88,13 @@ class AssetTemplateMethods:
                 model_num, 
                 serial, 
                 power,
+                devices_protected if devices_protected.lower() != 'unknown' else ''
             ]])
         
             self.method_type['fixed_extinguishing_systems']['devices'].add(identifier)
 
     def fire_hydrants(self, file_path):
- 
+
         response = self.api_call(file_path, page=0, prompt=Prompts.hydrants)
         data = response.split(',')
 
@@ -104,7 +107,7 @@ class AssetTemplateMethods:
         shut_off_location = data[7]
         location = data[8]
         business_name = data[9]
-        
+
         if f'{address} - {hydrant_number}' not in self.method_type['fire_hydrants']['devices']:
             self.update_workbook("Fire Hydrants", [[
                 address,
@@ -115,6 +118,7 @@ class AssetTemplateMethods:
                 model,
                 color,
                 shut_off_location,
+                location,
                 hydrant_type
             ]])
             self.method_type['fire_hydrants']['devices'].add(f'{address} - {hydrant_number}')
@@ -122,7 +126,7 @@ class AssetTemplateMethods:
         return None
             
     def backflows(self, file_path):
-
+     
         response = self.api_call(file_path, page=0, prompt=Prompts.backflow_page_1)
         data = response.split(',')
 
@@ -133,6 +137,7 @@ class AssetTemplateMethods:
         serial = data[4]
         type = data[5].upper()
         size = data[6]
+        serves = data[7]
         location = self.api_call(file_path, page=1, prompt=Prompts.backflow_page_2)
 
     
@@ -153,7 +158,8 @@ class AssetTemplateMethods:
                 model,
                 serial,
                 size,
-                location
+                location, 
+                serves
             ]])
 
             self.method_type['backflows']['devices'].add(f'{business_name} - {serial}')
@@ -283,7 +289,6 @@ class AssetTemplateMethods:
 
         return None
 
-        
     def emergency_lighting(self, file_path):
         
         tables = self.get_document_tables(file_path)
@@ -343,6 +348,8 @@ class AssetTemplateMethods:
         self.update_workbook("Emergency Lights", lighting_data)
 
     def emergency_lighting_extinguisher(self, file_path):
+
+        #size location might be due to field being a dropdown
         
         tables = self.get_document_tables(file_path)
         extracted_data = {}
