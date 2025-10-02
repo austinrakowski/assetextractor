@@ -76,13 +76,17 @@ class AssetExtractorUtils:
         self.workbook.save("assets.xlsx")
 
     def update_workbook(self, sheet_name, data):
-        
-        sheet = self.workbook[sheet_name]
-
-        for row in data:
-            sheet.append(row)
-
-        self.workbook.save("assets.xlsx")
+        if hasattr(self, 'workbook_lock'):
+            with self.workbook_lock:
+                sheet = self.workbook[sheet_name]
+                for row in data:
+                    sheet.append(row)
+                self.workbook.save("assets.xlsx")
+        else:
+            sheet = self.workbook[sheet_name]
+            for row in data:
+                sheet.append(row)
+            self.workbook.save("assets.xlsx")
 
     def get_document_text(self, file_path): 
     
@@ -148,7 +152,7 @@ class AssetExtractorUtils:
             return []
         
     def _headers_match(self, actual_headers, target_headers):
-        """Check if actual headers match target headers (allowing for some flexibility)"""
+        """Check if actual headers match target headers """
         if len(actual_headers) < len(target_headers):
             return False
     
@@ -236,6 +240,9 @@ class AssetExtractorUtils:
     def api_call(self, file_path, page, prompt): 
         #needed this for 3 templates that had checkboxes that have the same properties when checked vs unchecked 
         #my only chance of figuring this one out was gpt, so if you think about it im really just cutting out the middle man
+
+        if hasattr(self, 'rate_limiter'): 
+            self.rate_limiter.wait_if_needed()
 
         img = self.doc_to_base64(file_path, page)
         
